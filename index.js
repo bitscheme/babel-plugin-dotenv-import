@@ -22,7 +22,7 @@ module.exports = ({types: t}) => ({
   pre() {
     this.opts = {
       moduleName: '@env',
-      path: '.env',
+      path: process.env.ENV_FILE || '.env',
       whitelist: null,
       blacklist: null,
       safe: false,
