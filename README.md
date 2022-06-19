@@ -55,6 +55,15 @@ fetch(`${API_URL}/users`, {
 })
 ```
 
+## The .env file
+
+The .env file must be explicitly specified when using `safe: true`, otherwise it can be set in your `.babelrc` using `path` or using the environment variable `ENV_FILE`, for example on the command line:
+
+```sh
+ENV_FILE=.env.release node src/index.js
+```
+
+If the .env file is not specified using `path`, only previously defined environment variables will be available.
 ## White and black lists
 
 It is possible to limit the scope of env variables that will be imported by specifying a `whitelist` and/or a `blacklist` as an array of strings.

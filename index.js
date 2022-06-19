@@ -1,5 +1,5 @@
 const process = require('process')
-const {readFileSync} = require('fs')
+const {readFileSync, existsSync} = require('fs')
 
 const dotenv = require('dotenv')
 
@@ -22,7 +22,7 @@ module.exports = ({types: t}) => ({
   pre() {
     this.opts = {
       moduleName: '@env',
-      path: process.env.ENV_FILE || '.env',
+      path: process.env.ENV_FILE || undefined, //'.env',
       whitelist: null,
       blacklist: null,
       safe: false,
@@ -44,8 +44,16 @@ module.exports = ({types: t}) => ({
     ImportDeclaration(path, {opts}) {
       if (path.node.source.value === opts.moduleName) {
         for (const [idx, specifier] of path.node.specifiers.entries()) {
+          if (opts.path && !opts.safe && !existsSync(opts.path)) {
+            throw path
+              .get('specifiers')
+              [idx].buildCodeFrameError(`${opts.path} file not found`)
+          }
+
           if (specifier.type === 'ImportDefaultSpecifier') {
-            throw path.get('specifiers')[idx].buildCodeFrameError('Default import is not supported')
+            throw path
+              .get('specifiers')
+              [idx].buildCodeFrameError('Default import is not supported')
           }
 
           if (specifier.type === 'ImportNamespaceSpecifier') {
@@ -64,13 +72,15 @@ module.exports = ({types: t}) => ({
           }
 
           if (Array.isArray(opts.blacklist) && opts.blacklist.includes(importedId)) {
-            throw path.get('specifiers')[idx].buildCodeFrameError(`"${importedId}" was blacklisted`)
+            throw path
+              .get('specifiers')
+              [idx].buildCodeFrameError(`"${importedId}" was blacklisted`)
           }
 
           if (!opts.allowUndefined && !Object.prototype.hasOwnProperty.call(this.env, importedId)) {
             throw path
               .get('specifiers')
-              [idx].buildCodeFrameError(`"${importedId}" is not defined in ${opts.path}`)
+              [idx].buildCodeFrameError(`"${importedId}" is not defined in ${opts.path || 'any environment variables'}`)
           }
 
           const binding = path.scope.getBinding(localId)

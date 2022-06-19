@@ -12,7 +12,7 @@ describe('babel-plugin-dotenv-import', () => {
 
   it('should throw if the variable does not exist', () => {
     expect(() => transformFileSync(FIXTURES + 'variable-not-exist/source.js')).toThrow(
-      '"foo" is not defined in .env',
+      '"foo" is not defined in any environment variables',
     )
   })
 
@@ -28,8 +28,14 @@ describe('babel-plugin-dotenv-import', () => {
     )
   })
 
-  it('should load environment variables from .env', () => {
+  it('should load variables from .env', () => {
     const {code} = transformFileSync(FIXTURES + 'default/source.js')
+    expect(code).toBe('console.log("abc123");\nconsole.log("username");')
+  })
+
+  it('should load variables from ENV_FILE environment variable ', () => {
+    process.env.ENV_FILE = "__tests__/__fixtures__/env-file/.env.release"
+    const {code} = transformFileSync(FIXTURES + 'env-file/source.js')
     expect(code).toBe('console.log("abc123");\nconsole.log("username");')
   })
 
@@ -69,6 +75,13 @@ describe('babel-plugin-dotenv-import', () => {
     )
   })
 
+  it('should throw when ENV_FILE defined but file is missing ', () => {
+    process.env.ENV_FILE = ".nope.env"
+    expect(() => transformFileSync(FIXTURES + 'no-env-file/source.js')).toThrow(
+      '.nope.env file not found',
+    )
+  })
+
   it('should throw when using non-whitelisted env variables', () => {
     expect(() => transformFileSync(FIXTURES + 'whitelist/source.js')).toThrow(
       '"NOT_WHITELISTED" was not whitelisted',
@@ -99,7 +112,7 @@ describe('babel-plugin-dotenv-import', () => {
     expect(code).toBe('console.log(undefined);')
   })
 
-  it('should not throw if .env exists in safe mode', () => {
+  it('should not throw if .env does not exist in safe mode', () => {
     const {code} = transformFileSync(FIXTURES + 'safe-no-dotenv/source.js')
     expect(code).toBe('console.log(undefined);')
   })
